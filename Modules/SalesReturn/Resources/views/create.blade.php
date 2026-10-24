@@ -55,6 +55,21 @@
                                 </div>
                             </div>
 
+                            <div class="form-row">
+                                <div class="col-lg-4">
+                                    <div class="form-group">
+                                        <label for="sale_id">Original Sale (optional reference)</label>
+                                        <select class="form-control" name="sale_id" id="sale_id">
+                                            <option value="">None</option>
+                                            @foreach(\Modules\Sale\Entities\Sale::where('status', '!=', 'Cancelled')->latest('id')->limit(300)->get() as $doc)
+                                                <option value="{{ $doc->id }}">{{ $doc->reference }} - {{ $doc->customer_name }}</option>
+                                            @endforeach
+                                        </select>
+                                        <small class="text-muted">Reference only: the return is credited to the party account, not to this invoice.</small>
+                                    </div>
+                                </div>
+                            </div>
+
                             <livewire:product-cart :cartInstance="'sale_return'"/>
 
                             <div class="form-row">

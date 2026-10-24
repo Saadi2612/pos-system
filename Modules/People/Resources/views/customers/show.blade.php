@@ -48,6 +48,10 @@
                 </div>
             </div>
         </div>
+
+        @if(isset($account) && $account)
+            @include('credit.party-account', ['type' => 'customer', 'party' => $customer, 'account' => $account])
+        @endif
     </div>
 @endsection
 

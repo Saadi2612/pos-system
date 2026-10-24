@@ -54,6 +54,21 @@
                                 </div>
                             </div>
 
+                            <div class="form-row">
+                                <div class="col-lg-4">
+                                    <div class="form-group">
+                                        <label for="purchase_id">Original Purchase (optional reference)</label>
+                                        <select class="form-control" name="purchase_id" id="purchase_id">
+                                            <option value="">None</option>
+                                            @foreach(\Modules\Purchase\Entities\Purchase::where('status', '!=', 'Cancelled')->latest('id')->limit(300)->get() as $doc)
+                                                <option value="{{ $doc->id }}">{{ $doc->reference }} - {{ $doc->supplier_name }}</option>
+                                            @endforeach
+                                        </select>
+                                        <small class="text-muted">Reference only: the return is credited to the party account, not to this invoice.</small>
+                                    </div>
+                                </div>
+                            </div>
+
                             <livewire:product-cart :cartInstance="'purchase_return'"/>
 
                             <div class="form-row">

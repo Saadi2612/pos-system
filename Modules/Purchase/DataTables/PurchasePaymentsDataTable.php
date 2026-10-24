@@ -17,6 +17,9 @@ class PurchasePaymentsDataTable extends DataTable
             ->addColumn('amount', function ($data) {
                 return format_currency($data->amount);
             })
+            ->addColumn('status', function ($data) {
+                return $data->voided_at ? 'Voided' : 'Active';
+            })
             ->addColumn('action', function ($data) {
                 return view('purchase::payments.partials.actions', compact('data'));
             });
@@ -34,7 +37,7 @@ class PurchasePaymentsDataTable extends DataTable
             ->dom("<'row'<'col-md-3'l><'col-md-5 mb-2'B><'col-md-4'f>> .
                                 'tr' .
                                 <'row'<'col-md-5'i><'col-md-7 mt-2'p>>")
-            ->orderBy(5)
+            ->orderBy(6)
             ->buttons(
                 Button::make('excel')
                     ->text('<i class="bi bi-file-earmark-excel-fill"></i> Excel'),
@@ -59,6 +62,9 @@ class PurchasePaymentsDataTable extends DataTable
                 ->className('align-middle text-center'),
 
             Column::make('payment_method')
+                ->className('align-middle text-center'),
+
+            Column::computed('status')
                 ->className('align-middle text-center'),
 
             Column::computed('action')

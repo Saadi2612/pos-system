@@ -36,6 +36,7 @@ class CustomersController extends Controller
             'city'           => 'required|string|max:255',
             'country'        => 'required|string|max:255',
             'address'        => 'required|string|max:500',
+            'credit_limit'   => 'nullable|numeric|min:0',
         ]);
 
         Customer::create([
@@ -44,7 +45,8 @@ class CustomersController extends Controller
             'customer_email' => $request->customer_email,
             'city'           => $request->city,
             'country'        => $request->country,
-            'address'        => $request->address
+            'address'        => $request->address,
+            'credit_limit'   => $request->filled('credit_limit') ? money_to_minor($request->credit_limit) : null,
         ]);
 
         toast('Customer Created!', 'success');
@@ -56,7 +58,11 @@ class CustomersController extends Controller
     public function show(Customer $customer) {
         abort_if(Gate::denies('show_customers'), 403);
 
-        return view('people::customers.show', compact('customer'));
+        $account = Gate::allows('access_customer_ledger')
+            ? app(\App\Services\Ledger\CreditQueries::class)->account('customer', $customer->id)
+            : null;
+
+        return view('people::customers.show', compact('customer', 'account'));
     }
 
 
@@ -68,7 +74,7 @@ class CustomersController extends Controller
 
 
     public function update(Request $request, Customer $customer) {
-        abort_if(Gate::denies('update_customers'), 403);
+        abort_if(Gate::denies('edit_customers'), 403);
 
         $request->validate([
             'customer_name'  => 'required|string|max:255',
@@ -77,6 +83,7 @@ class CustomersController extends Controller
             'city'           => 'required|string|max:255',
             'country'        => 'required|string|max:255',
             'address'        => 'required|string|max:500',
+            'credit_limit'   => 'nullable|numeric|min:0',
         ]);
 
         $customer->update([
@@ -85,7 +92,8 @@ class CustomersController extends Controller
             'customer_email' => $request->customer_email,
             'city'           => $request->city,
             'country'        => $request->country,
-            'address'        => $request->address
+            'address'        => $request->address,
+            'credit_limit'   => $request->filled('credit_limit') ? money_to_minor($request->credit_limit) : null,
         ]);
 
         toast('Customer Updated!', 'info');
@@ -96,6 +104,14 @@ class CustomersController extends Controller
 
     public function destroy(Customer $customer) {
         abort_if(Gate::denies('delete_customers'), 403);
+
+        if (\Illuminate\Support\Facades\DB::table('ledger_entries')->where('party_type', 'customer')->where('party_id', $customer->id)->exists()
+            || \Illuminate\Support\Facades\DB::table('sales')->where('customer_id', $customer->id)->exists()
+            || \Illuminate\Support\Facades\DB::table('sale_returns')->where('customer_id', $customer->id)->exists()) {
+            toast('This customer has financial history and cannot be deleted.', 'error');
+
+            return redirect()->route('customers.index');
+        }
 
         $customer->delete();
 

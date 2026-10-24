@@ -32,6 +32,7 @@
 
 @push('page_scripts')
     <script src="{{ asset('js/jquery-mask-money.js') }}"></script>
+    <script src="{{ asset('js/credit-payment.js') }}"></script>
     <script>
         $(document).ready(function () {
             window.addEventListener('showCheckoutModal', event => {
@@ -53,6 +54,10 @@
 
                 $('#paid_amount').maskMoney('mask');
                 $('#total_amount').maskMoney('mask');
+
+                initCreditPayment($('#checkout-form'), function () {
+                    return $('#total_amount').maskMoney('unmasked')[0];
+                });
 
                 $('#checkout-form').submit(function () {
                     var paid_amount = $('#paid_amount').maskMoney('unmasked')[0];

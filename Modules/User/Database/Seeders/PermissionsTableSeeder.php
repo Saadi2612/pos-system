@@ -119,14 +119,20 @@ class PermissionsTableSeeder extends Seeder
         ];
 
         foreach ($permissions as $permission) {
-            Permission::create([
+            Permission::firstOrCreate([
                 'name' => $permission
             ]);
         }
 
-        $role = Role::create([
+        $role = Role::firstOrCreate([
             'name' => 'Admin'
         ]);
+
+        // Credit / ledger permissions (also created by migration 2026_10_16_000004)
+        $permissions = array_merge($permissions, \App\Services\Ledger\CreditPermissions::NAMES);
+        foreach (\App\Services\Ledger\CreditPermissions::NAMES as $permission) {
+            Permission::firstOrCreate(['name' => $permission]);
+        }
 
         $role->givePermissionTo($permissions);
         $role->revokePermissionTo('access_user_management');

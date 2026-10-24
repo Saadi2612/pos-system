@@ -60,3 +60,44 @@ if (!function_exists('array_merge_numeric_values')) {
         return $merged;
     }
 }
+
+if (!function_exists('money_to_minor')) {
+    /**
+     * Convert a decimal amount (e.g. "19.99", 19.99) to integer minor units (1999).
+     * Uses string/rounding arithmetic so float artefacts (19.99 * 100 = 1998.9999...) never leak.
+     */
+    function money_to_minor($value): int {
+        if ($value === null || $value === '') {
+            return 0;
+        }
+
+        return (int) round(((float) str_replace(',', '', (string) $value)) * 100);
+    }
+}
+
+if (!function_exists('minor_to_money')) {
+    /** Convert integer minor units to a decimal amount. */
+    function minor_to_money($value): float {
+        return ((int) $value) / 100;
+    }
+}
+
+if (!function_exists('format_minor')) {
+    /** Format integer minor units with the configured currency. */
+    function format_minor($value, $format = true) {
+        return format_currency(((int) $value) / 100, $format);
+    }
+}
+
+if (!function_exists('balance_label')) {
+    /** "1,000.00 Dr" style label: customer positive = Dr (owes us); supplier positive = Cr (we owe). */
+    function balance_label(string $partyType, int $balance): string {
+        if ($balance === 0) {
+            return format_minor(0);
+        }
+
+        $debit = $partyType === 'customer' ? $balance > 0 : $balance < 0;
+
+        return format_minor(abs($balance)) . ($debit ? ' Dr' : ' Cr');
+    }
+}

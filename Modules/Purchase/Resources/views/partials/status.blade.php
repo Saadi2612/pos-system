@@ -1,3 +1,6 @@
+@if ($data->status == 'Cancelled')
+    <span class="badge badge-secondary">Cancelled</span>
+@else
 @if ($data->status == 'Pending')
     <span class="badge badge-info">
         {{ $data->status }}
@@ -10,4 +13,6 @@
     <span class="badge badge-success">
         {{ $data->status }}
     </span>
+@endif
+
 @endif

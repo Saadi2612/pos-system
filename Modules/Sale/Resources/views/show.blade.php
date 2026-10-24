@@ -53,6 +53,8 @@
                                 </div>
                                 <div>
                                     Payment Status: <strong>{{ $sale->payment_status }}</strong>
+                                    <br>
+                                    Due Date: <strong>{{ $sale->due_date ? \Illuminate\Support\Carbon::parse($sale->due_date)->format('d M, Y') : '-' }}</strong>
                                 </div>
                             </div>
 

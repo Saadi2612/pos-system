@@ -34,6 +34,8 @@
                                         <option value="sale_return">Sale Returns</option>
                                         <option value="purchase">Purchase</option>
                                         <option value="purchase_return">Purchase Returns</option>
+                                        <option value="customer_receipt">Customer Receipts (incl. advances)</option>
+                                        <option value="supplier_payment">Supplier Payments (incl. advances)</option>
                                     </select>
                                     @error('payments')
                                     <span class="text-danger mt-1">{{ $message }}</span>
@@ -101,6 +103,10 @@
                                             {{ $data->saleReturn->reference }}
                                         @elseif($payments == 'purchase_return')
                                             {{ $data->purchaseReturn->reference }}
+                                        @elseif($payments == 'customer_receipt')
+                                            {{ optional($data->customer)->customer_name }}
+                                        @elseif($payments == 'supplier_payment')
+                                            {{ optional($data->supplier)->supplier_name }}
                                         @endif
                                     </td>
                                     <td>{{ format_currency($data->amount) }}</td>

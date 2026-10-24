@@ -15,15 +15,17 @@ class StorePurchaseRequest extends FormRequest
     public function rules()
     {
         return [
-            'supplier_id' => 'required|numeric',
-            'reference' => 'required|string|max:255',
+            'supplier_id' => 'required|integer|exists:suppliers,id',
+            'date' => 'required|date',
+            'supplier_reference' => 'nullable|string|max:255',
             'tax_percentage' => 'required|integer|min:0|max:100',
             'discount_percentage' => 'required|integer|min:0|max:100',
-            'shipping_amount' => 'required|numeric',
-            'total_amount' => 'required|numeric',
-            'paid_amount' => 'required|numeric',
-            'status' => 'required|string|max:255',
-            'payment_method' => 'required|string|max:255',
+            'shipping_amount' => 'required|numeric|min:0',
+            'status' => 'required|string|in:Pending,Ordered,Completed',
+            'payment_type' => 'required|string|in:full,partial,credit',
+            'paid_amount' => 'nullable|numeric|min:0',
+            'due_date' => 'nullable|date|after_or_equal:date',
+            'payment_method' => 'required|string|in:Cash,Credit Card,Bank Transfer,Cheque,Other',
             'note' => 'nullable|string|max:1000'
         ];
     }

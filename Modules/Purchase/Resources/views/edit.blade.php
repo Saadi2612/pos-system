@@ -84,6 +84,27 @@
                                 </div>
                             </div>
 
+                            <div class="form-row">
+                                <div class="col-lg-4">
+                                    <div class="form-group">
+                                        <label for="supplier_reference">Supplier Invoice No. (optional)</label>
+                                        <input type="text" class="form-control" name="supplier_reference" maxlength="255" value="{{ old('supplier_reference', $purchase->supplier_reference) }}">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="col-lg-4">
+                                    <div class="form-group">
+                                        <label for="due_date">Due Date (optional)</label>
+                                        <input type="date" class="form-control" name="due_date" id="due_date" value="{{ old('due_date', $purchase->due_date ? \Illuminate\Support\Carbon::parse($purchase->due_date)->format('Y-m-d') : '') }}">
+                                    </div>
+                                </div>
+                                <div class="col-lg-8">
+                                    <p class="text-muted mb-0 mt-4">Payments are managed from the payments screen / customer account; they cannot be edited here.</p>
+                                </div>
+                            </div>
+
                             <div class="form-group">
                                 <label for="note">Note (If Needed)</label>
                                 <textarea name="note" id="note" rows="5" class="form-control">{{ $purchase->note }}</textarea>

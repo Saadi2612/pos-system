@@ -35,10 +35,6 @@ Route::group(['middleware' => 'auth'], function () {
         ->name('sale-return-payments.create');
     Route::post('/sale-return-payments/store', 'SaleReturnPaymentsController@store')
         ->name('sale-return-payments.store');
-    Route::get('/sale-return-payments/{sale_return_id}/edit/{saleReturnPayment}', 'SaleReturnPaymentsController@edit')
-        ->name('sale-return-payments.edit');
-    Route::patch('/sale-return-payments/update/{saleReturnPayment}', 'SaleReturnPaymentsController@update')
-        ->name('sale-return-payments.update');
     Route::delete('/sale-return-payments/destroy/{saleReturnPayment}', 'SaleReturnPaymentsController@destroy')
         ->name('sale-return-payments.destroy');
 });

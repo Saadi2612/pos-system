@@ -9,34 +9,38 @@
             </a>
         @endcan
         @can('access_sale_payments')
-            @if($data->due_amount > 0)
+            @if($data->due_amount > 0 && !$data->cancelled_at)
                 <a href="{{ route('sale-return-payments.create', $data->id) }}" class="dropdown-item">
                     <i class="bi bi-plus-circle-dotted mr-2 text-success" style="line-height: 1;"></i> Add Payment
                 </a>
             @endif
         @endcan
+        @if(!$data->cancelled_at)
         @can('edit_sales')
             <a href="{{ route('sale-returns.edit', $data->id) }}" class="dropdown-item">
                 <i class="bi bi-pencil mr-2 text-primary" style="line-height: 1;"></i> Edit
             </a>
         @endcan
+        @endif
         @can('show_sales')
             <a href="{{ route('sale-returns.show', $data->id) }}" class="dropdown-item">
                 <i class="bi bi-eye mr-2 text-info" style="line-height: 1;"></i> Details
             </a>
         @endcan
+        @if(!$data->cancelled_at)
         @can('delete_sales')
             <button id="delete" class="dropdown-item" onclick="
                 event.preventDefault();
-                if (confirm('Are you sure? It will delete the data permanently!')) {
+                if (confirm('Cancel this document? Stock, payment allocations and ledger entries will be reversed.')) {
                 document.getElementById('destroy{{ $data->id }}').submit()
                 }">
-                <i class="bi bi-trash mr-2 text-danger" style="line-height: 1;"></i> Delete
+                <i class="bi bi-trash mr-2 text-danger" style="line-height: 1;"></i> Cancel
                 <form id="destroy{{ $data->id }}" class="d-none" action="{{ route('sale-returns.destroy', $data->id) }}" method="POST">
                     @csrf
                     @method('delete')
                 </form>
             </button>
         @endcan
+        @endif
     </div>
 </div>

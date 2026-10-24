@@ -23,8 +23,7 @@ class SaleReturn extends Model
         parent::boot();
 
         static::creating(function ($model) {
-            $number = SaleReturn::max('id') + 1;
-            $model->reference = make_reference_id('SLRN', $number);;
+            $model->reference = \App\Services\Ledger\ReferenceGenerator::next('SLRN', 'sale_returns');
         });
     }
 

@@ -30,4 +30,11 @@ Route::group(['middleware' => 'auth'], function () {
     //Purchases Return Report
     Route::get('/purchases-return-report', 'ReportsController@purchasesReturnReport')
         ->name('purchases-return-report.index');
+
+    //Credit / ledger reports
+    foreach (array_keys(\Modules\Reports\Http\Controllers\ReportsController::CREDIT_REPORTS) as $creditReport) {
+        Route::get('/credit-reports/' . $creditReport, 'ReportsController@credit')
+            ->defaults('report', $creditReport)
+            ->name($creditReport . '-report.index');
+    }
 });

@@ -15,15 +15,16 @@ class StoreSaleRequest extends FormRequest
     public function rules()
     {
         return [
-            'customer_id' => 'required|numeric',
-            'reference' => 'required|string|max:255',
+            'customer_id' => 'required|integer|exists:customers,id',
+            'date' => 'required|date',
             'tax_percentage' => 'required|integer|min:0|max:100',
             'discount_percentage' => 'required|integer|min:0|max:100',
-            'shipping_amount' => 'required|numeric',
-            'total_amount' => 'required|numeric',
-            'paid_amount' => 'required|numeric',
-            'status' => 'required|string|max:255',
-            'payment_method' => 'required|string|max:255',
+            'shipping_amount' => 'required|numeric|min:0',
+            'status' => 'required|string|in:Pending,Shipped,Completed',
+            'payment_type' => 'required|string|in:full,partial,credit',
+            'paid_amount' => 'nullable|numeric|min:0',
+            'due_date' => 'nullable|date|after_or_equal:date',
+            'payment_method' => 'required|string|in:Cash,Credit Card,Bank Transfer,Cheque,Other',
             'note' => 'nullable|string|max:1000'
         ];
     }

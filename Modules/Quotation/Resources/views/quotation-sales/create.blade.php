@@ -82,20 +82,9 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-lg-4">
-                                    <div class="form-group">
-                                        <label for="paid_amount">Amount Received <span class="text-danger">*</span></label>
-                                        <div class="input-group">
-                                            <input id="paid_amount" type="text" class="form-control" name="paid_amount" required>
-                                            <div class="input-group-append">
-                                                <button id="getTotalAmount" class="btn btn-primary" type="button">
-                                                    <i class="bi bi-check-square"></i>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
                             </div>
+
+                            @include('credit.payment-fields', ['label' => 'Amount Received'])
 
                             <div class="form-group">
                                 <label for="note">Note (If Needed)</label>
@@ -119,6 +108,7 @@
 
 @push('page_scripts')
     <script src="{{ asset('js/jquery-mask-money.js') }}"></script>
+    <script src="{{ asset('js/credit-payment.js') }}"></script>
     <script>
         $(document).ready(function () {
             $('#paid_amount').maskMoney({
@@ -128,8 +118,8 @@
                 allowZero: true,
             });
 
-            $('#getTotalAmount').click(function () {
-                $('#paid_amount').maskMoney('mask', {{ Cart::instance('sale')->total() }});
+            initCreditPayment($('#sale-form'), function () {
+                return parseFloat($('input[name="total_amount"]').val()) || 0;
             });
 
             $('#sale-form').submit(function () {

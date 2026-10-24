@@ -3,10 +3,9 @@
 namespace Modules\Sale\Http\Controllers;
 
 use Modules\Sale\DataTables\SalePaymentsDataTable;
-use Illuminate\Contracts\Support\Renderable;
+use App\Services\Ledger\LedgerService;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Modules\Sale\Entities\Sale;
 use Modules\Sale\Entities\SalePayment;
@@ -38,40 +37,17 @@ class SalePaymentsController extends Controller
         $request->validate([
             'date' => 'required|date',
             'reference' => 'required|string|max:255',
-            'amount' => 'required|numeric',
+            'amount' => 'required|numeric|gt:0',
             'note' => 'nullable|string|max:1000',
-            'sale_id' => 'required',
-            'payment_method' => 'required|string|max:255'
+            'sale_id' => 'required|integer|exists:sales,id',
+            'payment_method' => 'required|string|in:Cash,Credit Card,Bank Transfer,Cheque,Other'
         ]);
 
-        DB::transaction(function () use ($request) {
-            SalePayment::create([
-                'date' => $request->date,
-                'reference' => $request->reference,
-                'amount' => $request->amount,
-                'note' => $request->note,
-                'sale_id' => $request->sale_id,
-                'payment_method' => $request->payment_method
-            ]);
-
-            $sale = Sale::findOrFail($request->sale_id);
-
-            $due_amount = $sale->due_amount - $request->amount;
-
-            if ($due_amount == $sale->total_amount) {
-                $payment_status = 'Unpaid';
-            } elseif ($due_amount > 0) {
-                $payment_status = 'Partial';
-            } else {
-                $payment_status = 'Paid';
-            }
-
-            $sale->update([
-                'paid_amount' => ($sale->paid_amount + $request->amount) * 100,
-                'due_amount' => $due_amount * 100,
-                'payment_status' => $payment_status
-            ]);
-        });
+        // Amounts are converted to minor units exactly once, here; the service only deals in integers.
+        // Overpayment is rejected by the service (amount may not exceed the outstanding balance).
+        app(LedgerService::class)->payInvoice('sale', (int) $request->sale_id, money_to_minor($request->amount), [
+            'date' => $request->date, 'reference' => $request->reference, 'method' => $request->payment_method, 'note' => $request->note,
+        ], auth()->id());
 
         toast('Sale Payment Created!', 'success');
 
@@ -79,68 +55,13 @@ class SalePaymentsController extends Controller
     }
 
 
-    public function edit($sale_id, SalePayment $salePayment) {
-        abort_if(Gate::denies('access_sale_payments'), 403);
+    /** Payments are never deleted: voiding keeps the record, restores the balance and reverses the ledger. */
+    public function destroy(SalePayment $salePayment, Request $request) {
+        abort_if(Gate::denies('access_sale_payments') || Gate::denies('void_payments'), 403);
 
-        $sale = Sale::findOrFail($sale_id);
+        app(LedgerService::class)->voidPayment('sale', $salePayment->id, $request->input('reason', 'Voided by user'), auth()->id());
 
-        return view('sale::payments.edit', compact('salePayment', 'sale'));
-    }
-
-
-    public function update(Request $request, SalePayment $salePayment) {
-        abort_if(Gate::denies('access_sale_payments'), 403);
-
-        $request->validate([
-            'date' => 'required|date',
-            'reference' => 'required|string|max:255',
-            'amount' => 'required|numeric',
-            'note' => 'nullable|string|max:1000',
-            'sale_id' => 'required',
-            'payment_method' => 'required|string|max:255'
-        ]);
-
-        DB::transaction(function () use ($request, $salePayment) {
-            $sale = $salePayment->sale;
-
-            $due_amount = ($sale->due_amount + $salePayment->amount) - $request->amount;
-
-            if ($due_amount == $sale->total_amount) {
-                $payment_status = 'Unpaid';
-            } elseif ($due_amount > 0) {
-                $payment_status = 'Partial';
-            } else {
-                $payment_status = 'Paid';
-            }
-
-            $sale->update([
-                'paid_amount' => (($sale->paid_amount - $salePayment->amount) + $request->amount) * 100,
-                'due_amount' => $due_amount * 100,
-                'payment_status' => $payment_status
-            ]);
-
-            $salePayment->update([
-                'date' => $request->date,
-                'reference' => $request->reference,
-                'amount' => $request->amount,
-                'note' => $request->note,
-                'sale_id' => $request->sale_id,
-                'payment_method' => $request->payment_method
-            ]);
-        });
-
-        toast('Sale Payment Updated!', 'info');
-
-        return redirect()->route('sales.index');
-    }
-
-
-    public function destroy(SalePayment $salePayment) {
-        abort_if(Gate::denies('access_sale_payments'), 403);
-
-        $salePayment->delete();
-
-        toast('Sale Payment Deleted!', 'warning');
+        toast('Sale Payment Voided!', 'warning');
 
         return redirect()->route('sales.index');
     }

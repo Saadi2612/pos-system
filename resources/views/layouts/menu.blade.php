@@ -269,6 +269,78 @@
                     <i class="c-sidebar-nav-icon bi bi-clipboard-data" style="line-height: 1;"></i> Purchases Return Report
                 </a>
             </li>
+            @can('access_credit_reports')
+            @can('access_customer_ledger')
+            <li class="c-sidebar-nav-item">
+                <a class="c-sidebar-nav-link {{ request()->routeIs('customer-outstanding-report.index') ? 'c-active' : '' }}" href="{{ route('customer-outstanding-report.index') }}">
+                    <i class="c-sidebar-nav-icon bi bi-clipboard-data" style="line-height: 1;"></i> Customer Outstanding
+                </a>
+            </li>
+            @endcan
+            @can('access_customer_ledger')
+            <li class="c-sidebar-nav-item">
+                <a class="c-sidebar-nav-link {{ request()->routeIs('overdue-receivables-report.index') ? 'c-active' : '' }}" href="{{ route('overdue-receivables-report.index') }}">
+                    <i class="c-sidebar-nav-icon bi bi-clipboard-data" style="line-height: 1;"></i> Overdue Receivables
+                </a>
+            </li>
+            @endcan
+            @can('access_customer_ledger')
+            <li class="c-sidebar-nav-item">
+                <a class="c-sidebar-nav-link {{ request()->routeIs('receivables-ageing-report.index') ? 'c-active' : '' }}" href="{{ route('receivables-ageing-report.index') }}">
+                    <i class="c-sidebar-nav-icon bi bi-clipboard-data" style="line-height: 1;"></i> Receivables Ageing
+                </a>
+            </li>
+            @endcan
+            @can('access_customer_ledger')
+            <li class="c-sidebar-nav-item">
+                <a class="c-sidebar-nav-link {{ request()->routeIs('customer-ledger-report.index') ? 'c-active' : '' }}" href="{{ route('customer-ledger-report.index') }}">
+                    <i class="c-sidebar-nav-icon bi bi-clipboard-data" style="line-height: 1;"></i> Customer Ledger
+                </a>
+            </li>
+            @endcan
+            @can('access_customer_ledger')
+            <li class="c-sidebar-nav-item">
+                <a class="c-sidebar-nav-link {{ request()->routeIs('customer-receipts-report.index') ? 'c-active' : '' }}" href="{{ route('customer-receipts-report.index') }}">
+                    <i class="c-sidebar-nav-icon bi bi-clipboard-data" style="line-height: 1;"></i> Customer Receipts
+                </a>
+            </li>
+            @endcan
+            @can('access_supplier_ledger')
+            <li class="c-sidebar-nav-item">
+                <a class="c-sidebar-nav-link {{ request()->routeIs('supplier-outstanding-report.index') ? 'c-active' : '' }}" href="{{ route('supplier-outstanding-report.index') }}">
+                    <i class="c-sidebar-nav-icon bi bi-clipboard-data" style="line-height: 1;"></i> Supplier Outstanding
+                </a>
+            </li>
+            @endcan
+            @can('access_supplier_ledger')
+            <li class="c-sidebar-nav-item">
+                <a class="c-sidebar-nav-link {{ request()->routeIs('overdue-payables-report.index') ? 'c-active' : '' }}" href="{{ route('overdue-payables-report.index') }}">
+                    <i class="c-sidebar-nav-icon bi bi-clipboard-data" style="line-height: 1;"></i> Overdue Payables
+                </a>
+            </li>
+            @endcan
+            @can('access_supplier_ledger')
+            <li class="c-sidebar-nav-item">
+                <a class="c-sidebar-nav-link {{ request()->routeIs('payables-ageing-report.index') ? 'c-active' : '' }}" href="{{ route('payables-ageing-report.index') }}">
+                    <i class="c-sidebar-nav-icon bi bi-clipboard-data" style="line-height: 1;"></i> Payables Ageing
+                </a>
+            </li>
+            @endcan
+            @can('access_supplier_ledger')
+            <li class="c-sidebar-nav-item">
+                <a class="c-sidebar-nav-link {{ request()->routeIs('supplier-ledger-report.index') ? 'c-active' : '' }}" href="{{ route('supplier-ledger-report.index') }}">
+                    <i class="c-sidebar-nav-icon bi bi-clipboard-data" style="line-height: 1;"></i> Supplier Ledger
+                </a>
+            </li>
+            @endcan
+            @can('access_supplier_ledger')
+            <li class="c-sidebar-nav-item">
+                <a class="c-sidebar-nav-link {{ request()->routeIs('supplier-payments-report.index') ? 'c-active' : '' }}" href="{{ route('supplier-payments-report.index') }}">
+                    <i class="c-sidebar-nav-icon bi bi-clipboard-data" style="line-height: 1;"></i> Supplier Payments
+                </a>
+            </li>
+            @endcan
+            @endcan
         </ul>
     </li>
 @endcan
