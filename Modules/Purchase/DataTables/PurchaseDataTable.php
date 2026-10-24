@@ -30,6 +30,16 @@ class PurchaseDataTable extends DataTable
             ->addColumn('payment_status', function ($data) {
                 return view('purchase::partials.payment-status', compact('data'));
             })
+            ->addColumn('due_date', function ($data) {
+                if (!$data->due_date) {
+                    return '-';
+                }
+                $overdue = $data->due_amount > 0 && !$data->cancelled_at && \Illuminate\Support\Carbon::parse($data->due_date)->lt(today());
+                $text = \Illuminate\Support\Carbon::parse($data->due_date)->format('d M, Y');
+
+                return $overdue ? '<span class="text-danger">' . $text . ' (overdue)</span>' : $text;
+            })
+            ->rawColumns(['due_date', 'status', 'payment_status', 'action'])
             ->addColumn('action', function ($data) {
                 return view('purchase::partials.actions', compact('data'));
             });
@@ -47,7 +57,7 @@ class PurchaseDataTable extends DataTable
             ->dom("<'row'<'col-md-3'l><'col-md-5 mb-2'B><'col-md-4'f>> .
                                 'tr' .
                                 <'row'<'col-md-5'i><'col-md-7 mt-2'p>>")
-            ->orderBy(8)
+            ->orderBy(9)
             ->buttons(
                 Button::make('excel')
                     ->text('<i class="bi bi-file-earmark-excel-fill"></i> Excel'),
@@ -82,6 +92,9 @@ class PurchaseDataTable extends DataTable
                 ->className('text-center align-middle'),
 
             Column::computed('payment_status')
+                ->className('text-center align-middle'),
+
+            Column::computed('due_date')
                 ->className('text-center align-middle'),
 
             Column::computed('action')

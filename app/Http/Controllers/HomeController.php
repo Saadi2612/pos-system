@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
+use App\Services\Ledger\CashFlow;
 use Modules\Expense\Entities\Expense;
 use Modules\Purchase\Entities\Purchase;
 use Modules\Purchase\Entities\PurchasePayment;
@@ -77,77 +77,43 @@ class HomeController extends Controller
     public function paymentChart() {
         abort_if(!request()->ajax(), 404);
 
-        $dates = collect();
+        $months = collect();
         foreach (range(-11, 0) as $i) {
-            $date = Carbon::now()->addMonths($i)->format('m-Y');
-            $dates->put($date, 0);
+            $months->put(Carbon::now()->addMonths($i)->format('m-Y'), 0);
         }
 
         $date_range = Carbon::today()->subYear()->format('Y-m-d');
+        $cash = app(CashFlow::class);
 
-        $sale_payments = SalePayment::where('date', '>=', $date_range)
-            ->select([
-                DB::raw("DATE_FORMAT(date, '%m-%Y') as month"),
-                DB::raw("SUM(amount) as amount")
-            ])
-            ->groupBy('month')->orderBy('month')
-            ->get()->pluck('amount', 'month');
+        $received = $months->all();
+        $sent = $months->all();
 
-        $sale_return_payments = SaleReturnPayment::where('date', '>=', $date_range)
-            ->select([
-                DB::raw("DATE_FORMAT(date, '%m-%Y') as month"),
-                DB::raw("SUM(amount) as amount")
-            ])
-            ->groupBy('month')->orderBy('month')
-            ->get()->pluck('amount', 'month');
-
-        $purchase_payments = PurchasePayment::where('date', '>=', $date_range)
-            ->select([
-                DB::raw("DATE_FORMAT(date, '%m-%Y') as month"),
-                DB::raw("SUM(amount) as amount")
-            ])
-            ->groupBy('month')->orderBy('month')
-            ->get()->pluck('amount', 'month');
-
-        $purchase_return_payments = PurchaseReturnPayment::where('date', '>=', $date_range)
-            ->select([
-                DB::raw("DATE_FORMAT(date, '%m-%Y') as month"),
-                DB::raw("SUM(amount) as amount")
-            ])
-            ->groupBy('month')->orderBy('month')
-            ->get()->pluck('amount', 'month');
-
-        $expenses = Expense::where('date', '>=', $date_range)
-            ->select([
-                DB::raw("DATE_FORMAT(date, '%m-%Y') as month"),
-                DB::raw("SUM(amount) as amount")
-            ])
-            ->groupBy('month')->orderBy('month')
-            ->get()->pluck('amount', 'month');
-
-        $payment_received = array_merge_numeric_values($sale_payments, $purchase_return_payments);
-        $payment_sent = array_merge_numeric_values($purchase_payments, $sale_return_payments, $expenses);
-
-        $dates_received = $dates->merge($payment_received);
-        $dates_sent = $dates->merge($payment_sent);
-
-        $received_payments = [];
-        $sent_payments = [];
-        $months = [];
-
-        foreach ($dates_received as $key => $value) {
-            $received_payments[] = $value;
-            $months[] = $key;
+        // Real cash movements only (credit invoices are not cash); grouped in PHP so it runs on MySQL and SQLite.
+        foreach ($cash->received($date_range) as $row) {
+            $key = Carbon::parse($row->date)->format('m-Y');
+            if (array_key_exists($key, $received)) {
+                $received[$key] += $row->amount;
+            }
         }
 
-        foreach ($dates_sent as $key => $value) {
-            $sent_payments[] = $value;
+        foreach ($cash->sent($date_range) as $row) {
+            $key = Carbon::parse($row->date)->format('m-Y');
+            if (array_key_exists($key, $sent)) {
+                $sent[$key] += $row->amount;
+            }
+        }
+
+        foreach (Expense::where('date', '>=', $date_range)->get(['date', 'amount']) as $expense) {
+            $key = Carbon::parse($expense->date)->format('m-Y');
+            if (array_key_exists($key, $sent)) {
+                $sent[$key] += $expense->getRawOriginal('amount');
+            }
         }
 
         return response()->json([
-            'payment_sent' => $sent_payments,
-            'payment_received' => $received_payments,
-            'months' => $months,
+            'payment_sent' => array_map(fn ($v) => $v / 100, array_values($sent)),
+            'payment_received' => array_map(fn ($v) => $v / 100, array_values($received)),
+            'months' => array_keys($received),
         ]);
     }
 
@@ -162,13 +128,9 @@ class HomeController extends Controller
 
         $sales = Sale::where('status', 'Completed')
             ->where('date', '>=', $date_range)
-            ->groupBy(DB::raw("DATE_FORMAT(date,'%d-%m-%y')"))
-            ->orderBy('date')
-            ->get([
-                DB::raw(DB::raw("DATE_FORMAT(date,'%d-%m-%y') as date")),
-                DB::raw('SUM(total_amount) AS count'),
-            ])
-            ->pluck('count', 'date');
+            ->get(['date', 'total_amount'])
+            ->groupBy(fn ($row) => Carbon::parse($row->date)->format('d-m-y'))
+            ->map(fn ($rows) => $rows->sum(fn ($row) => $row->getRawOriginal('total_amount')));
 
         $dates = $dates->merge($sales);
 
@@ -194,13 +156,9 @@ class HomeController extends Controller
 
         $purchases = Purchase::where('status', 'Completed')
             ->where('date', '>=', $date_range)
-            ->groupBy(DB::raw("DATE_FORMAT(date,'%d-%m-%y')"))
-            ->orderBy('date')
-            ->get([
-                DB::raw(DB::raw("DATE_FORMAT(date,'%d-%m-%y') as date")),
-                DB::raw('SUM(total_amount) AS count'),
-            ])
-            ->pluck('count', 'date');
+            ->get(['date', 'total_amount'])
+            ->groupBy(fn ($row) => Carbon::parse($row->date)->format('d-m-y'))
+            ->map(fn ($rows) => $rows->sum(fn ($row) => $row->getRawOriginal('total_amount')));
 
         $dates = $dates->merge($purchases);
 

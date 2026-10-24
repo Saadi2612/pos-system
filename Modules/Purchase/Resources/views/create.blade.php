@@ -55,6 +55,15 @@
                                 </div>
                             </div>
 
+                            <div class="form-row">
+                                <div class="col-lg-4">
+                                    <div class="form-group">
+                                        <label for="supplier_reference">Supplier Invoice No. (optional)</label>
+                                        <input type="text" class="form-control" name="supplier_reference" id="supplier_reference" maxlength="255" value="{{ old('supplier_reference') }}">
+                                    </div>
+                                </div>
+                            </div>
+
                             <livewire:product-cart :cartInstance="'purchase'"/>
 
                             <div class="form-row">
@@ -82,20 +91,9 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-lg-4">
-                                    <div class="form-group">
-                                        <label for="paid_amount">Amount Paid <span class="text-danger">*</span></label>
-                                        <div class="input-group">
-                                            <input id="paid_amount" type="text" class="form-control" name="paid_amount" required>
-                                            <div class="input-group-append">
-                                                <button id="getTotalAmount" class="btn btn-primary" type="button">
-                                                    <i class="bi bi-check-square"></i>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
                             </div>
+
+                            @include('credit.payment-fields', ['label' => 'Amount Paid'])
 
                             <div class="form-group">
                                 <label for="note">Note (If Needed)</label>
@@ -117,6 +115,7 @@
 
 @push('page_scripts')
     <script src="{{ asset('js/jquery-mask-money.js') }}"></script>
+    <script src="{{ asset('js/credit-payment.js') }}"></script>
     <script>
         $(document).ready(function () {
             $('#paid_amount').maskMoney({
@@ -126,8 +125,8 @@
                 allowZero: true,
             });
 
-            $('#getTotalAmount').click(function () {
-                $('#paid_amount').maskMoney('mask', {{ Cart::instance('purchase')->total() }});
+            initCreditPayment($('#purchase-form'), function () {
+                return parseFloat($('input[name="total_amount"]').val()) || 0;
             });
 
             $('#purchase-form').submit(function () {

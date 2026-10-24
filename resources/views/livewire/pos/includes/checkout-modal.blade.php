@@ -37,10 +37,26 @@
                                 </div>
                                 <div class="col-lg-6">
                                     <div class="form-group">
-                                        <label for="paid_amount">Received Amount <span class="text-danger">*</span></label>
-                                        <input id="paid_amount" type="text" class="form-control" name="paid_amount" value="{{ $total_amount }}" required>
+                                        <label for="paid_amount">Received Amount</label>
+                                        <input id="paid_amount" type="text" class="form-control" name="paid_amount" value="{{ $total_amount }}">
                                     </div>
                                 </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Payment Type <span class="text-danger">*</span></label>
+                                <div>
+                                    @foreach(['full' => 'Full payment', 'partial' => 'Partial', 'credit' => 'Full credit'] as $value => $text)
+                                        <div class="custom-control custom-radio custom-control-inline">
+                                            <input type="radio" id="pos_payment_type_{{ $value }}" name="payment_type" value="{{ $value }}"
+                                                   class="custom-control-input" {{ $value === 'full' ? 'checked' : '' }}>
+                                            <label class="custom-control-label" for="pos_payment_type_{{ $value }}">{{ $text }}</label>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                            <div class="form-group credit-due-wrap" style="display: none;">
+                                <label for="due_date">Due Date (optional)</label>
+                                <input type="date" class="form-control" name="due_date" id="due_date" min="{{ now()->format('Y-m-d') }}">
                             </div>
                             <div class="form-group">
                                 <label for="payment_method">Payment Method <span class="text-danger">*</span></label>

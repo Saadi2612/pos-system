@@ -163,7 +163,10 @@ class ProfitLossReport extends Component
 
         foreach ($sales as $sale) {
             foreach ($sale->saleDetails as $saleDetail) {
-                $product_costs += $saleDetail->product->product_cost;
+                if (!is_null($saleDetail->product)) {
+                    // cost is per unit: multiply by the quantity sold (matches HomeController::index)
+                    $product_costs += $saleDetail->product->product_cost * $saleDetail->quantity;
+                }
             }
         }
 
@@ -172,43 +175,14 @@ class ProfitLossReport extends Component
         return $profit;
     }
 
+    /** Cash actually received: valid receipts, legacy direct payments and supplier refunds (never credit invoice totals). */
     public function calculatePaymentsReceived() {
-        $sale_payments = SalePayment::when($this->start_date, function ($query) {
-                return $query->whereDate('date', '>=', $this->start_date);
-            })
-            ->when($this->end_date, function ($query) {
-                return $query->whereDate('date', '<=', $this->end_date);
-            })
-            ->sum('amount') / 100;
-
-        $purchase_return_payments = PurchaseReturnPayment::when($this->start_date, function ($query) {
-                return $query->whereDate('date', '>=', $this->start_date);
-            })
-            ->when($this->end_date, function ($query) {
-                return $query->whereDate('date', '<=', $this->end_date);
-            })
-            ->sum('amount') / 100;
-
-        return $sale_payments + $purchase_return_payments;
+        return app(\App\Services\Ledger\CashFlow::class)->receivedTotal($this->start_date ?: null, $this->end_date ?: null) / 100;
     }
 
+    /** Cash actually paid out: valid supplier payments, customer refunds and expenses. */
     public function calculatePaymentsSent() {
-        $purchase_payments = PurchasePayment::when($this->start_date, function ($query) {
-                return $query->whereDate('date', '>=', $this->start_date);
-            })
-            ->when($this->end_date, function ($query) {
-                return $query->whereDate('date', '<=', $this->end_date);
-            })
-            ->sum('amount') / 100;
-
-        $sale_return_payments = SaleReturnPayment::when($this->start_date, function ($query) {
-                return $query->whereDate('date', '>=', $this->start_date);
-            })
-            ->when($this->end_date, function ($query) {
-                return $query->whereDate('date', '<=', $this->end_date);
-            })
-            ->sum('amount') / 100;
-
-        return $purchase_payments + $sale_return_payments + $this->expenses_amount;
+        return app(\App\Services\Ledger\CashFlow::class)->sentTotal($this->start_date ?: null, $this->end_date ?: null) / 100
+            + $this->expenses_amount;
     }
 }

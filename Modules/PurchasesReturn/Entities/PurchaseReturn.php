@@ -23,8 +23,7 @@ class PurchaseReturn extends Model
         parent::boot();
 
         static::creating(function ($model) {
-            $number = PurchaseReturn::max('id') + 1;
-            $model->reference = make_reference_id('PRRN', $number);
+            $model->reference = \App\Services\Ledger\ReferenceGenerator::next('PRRN', 'purchase_returns');
         });
     }
 

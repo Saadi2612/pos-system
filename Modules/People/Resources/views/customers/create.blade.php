@@ -68,6 +68,16 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <div class="form-row">
+                                <div class="col-lg-6">
+                                    <div class="form-group">
+                                        <label for="credit_limit">Credit Limit (optional)</label>
+                                        <input type="number" step="0.01" min="0" class="form-control" name="credit_limit" id="credit_limit" value="">
+                                        <small class="text-muted">Leave empty for no limit. A warning is shown when a credit sale exceeds it.</small>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

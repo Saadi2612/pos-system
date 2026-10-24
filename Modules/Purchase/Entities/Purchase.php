@@ -23,8 +23,7 @@ class Purchase extends Model
         parent::boot();
 
         static::creating(function ($model) {
-            $number = Purchase::max('id') + 1;
-            $model->reference = make_reference_id('PR', $number);
+            $model->reference = \App\Services\Ledger\ReferenceGenerator::next('PR', 'purchases');
         });
     }
 

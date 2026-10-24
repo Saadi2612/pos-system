@@ -3,9 +3,9 @@
 namespace Modules\PurchasesReturn\Http\Controllers;
 
 use Modules\PurchasesReturn\DataTables\PurchaseReturnPaymentsDataTable;
+use App\Services\Ledger\LedgerService;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Modules\PurchasesReturn\Entities\PurchaseReturn;
 use Modules\PurchasesReturn\Entities\PurchaseReturnPayment;
@@ -37,40 +37,17 @@ class PurchaseReturnPaymentsController extends Controller
         $request->validate([
             'date' => 'required|date',
             'reference' => 'required|string|max:255',
-            'amount' => 'required|numeric',
+            'amount' => 'required|numeric|gt:0',
             'note' => 'nullable|string|max:1000',
-            'purchase_return_id' => 'required',
-            'payment_method' => 'required|string|max:255'
+            'purchase_return_id' => 'required|integer|exists:purchase_returns,id',
+            'payment_method' => 'required|string|in:Cash,Credit Card,Bank Transfer,Cheque,Other'
         ]);
 
-        DB::transaction(function () use ($request) {
-            PurchaseReturnPayment::create([
-                'date' => $request->date,
-                'reference' => $request->reference,
-                'amount' => $request->amount,
-                'note' => $request->note,
-                'purchase_return_id' => $request->purchase_return_id,
-                'payment_method' => $request->payment_method
-            ]);
-
-            $purchase_return = PurchaseReturn::findOrFail($request->purchase_return_id);
-
-            $due_amount = $purchase_return->due_amount - $request->amount;
-
-            if ($due_amount == $purchase_return->total_amount) {
-                $payment_status = 'Unpaid';
-            } elseif ($due_amount > 0) {
-                $payment_status = 'Partial';
-            } else {
-                $payment_status = 'Paid';
-            }
-
-            $purchase_return->update([
-                'paid_amount' => ($purchase_return->paid_amount + $request->amount) * 100,
-                'due_amount' => $due_amount * 100,
-                'payment_status' => $payment_status
-            ]);
-        });
+        // Amounts are converted to minor units exactly once, here; the service only deals in integers.
+        // Overpayment is rejected by the service (amount may not exceed the outstanding balance).
+        app(LedgerService::class)->recordReturnPayment('purchase_return', (int) $request->purchase_return_id, money_to_minor($request->amount), [
+            'date' => $request->date, 'reference' => $request->reference, 'method' => $request->payment_method, 'note' => $request->note,
+        ], auth()->id());
 
         toast('Purchase Return Payment Created!', 'success');
 
@@ -78,68 +55,13 @@ class PurchaseReturnPaymentsController extends Controller
     }
 
 
-    public function edit($purchase_return_id, PurchaseReturnPayment $purchaseReturnPayment) {
-        abort_if(Gate::denies('access_purchase_return_payments'), 403);
+    /** Payments are never deleted: voiding keeps the record, restores the balance and reverses the ledger. */
+    public function destroy(PurchaseReturnPayment $purchaseReturnPayment, Request $request) {
+        abort_if(Gate::denies('access_purchase_return_payments') || Gate::denies('void_payments'), 403);
 
-        $purchase_return = PurchaseReturn::findOrFail($purchase_return_id);
+        app(LedgerService::class)->voidPayment('purchase_return', $purchaseReturnPayment->id, $request->input('reason', 'Voided by user'), auth()->id());
 
-        return view('purchasesreturn::payments.edit', compact('purchaseReturnPayment', 'purchase_return'));
-    }
-
-
-    public function update(Request $request, PurchaseReturnPayment $purchaseReturnPayment) {
-        abort_if(Gate::denies('access_purchase_return_payments'), 403);
-
-        $request->validate([
-            'date' => 'required|date',
-            'reference' => 'required|string|max:255',
-            'amount' => 'required|numeric',
-            'note' => 'nullable|string|max:1000',
-            'purchase_return_id' => 'required',
-            'payment_method' => 'required|string|max:255'
-        ]);
-
-        DB::transaction(function () use ($request, $purchaseReturnPayment) {
-            $purchase_return = $purchaseReturnPayment->purchaseReturn;
-
-            $due_amount = ($purchase_return->due_amount + $purchaseReturnPayment->amount) - $request->amount;
-
-            if ($due_amount == $purchase_return->total_amount) {
-                $payment_status = 'Unpaid';
-            } elseif ($due_amount > 0) {
-                $payment_status = 'Partial';
-            } else {
-                $payment_status = 'Paid';
-            }
-
-            $purchase_return->update([
-                'paid_amount' => (($purchase_return->paid_amount - $purchaseReturnPayment->amount) + $request->amount) * 100,
-                'due_amount' => $due_amount * 100,
-                'payment_status' => $payment_status
-            ]);
-
-            $purchaseReturnPayment->update([
-                'date' => $request->date,
-                'reference' => $request->reference,
-                'amount' => $request->amount,
-                'note' => $request->note,
-                'purchase_return_id' => $request->purchase_return_id,
-                'payment_method' => $request->payment_method
-            ]);
-        });
-
-        toast('Purchase Return Payment Updated!', 'info');
-
-        return redirect()->route('purchase-returns.index');
-    }
-
-
-    public function destroy(PurchaseReturnPayment $purchaseReturnPayment) {
-        abort_if(Gate::denies('access_purchase_return_payments'), 403);
-
-        $purchaseReturnPayment->delete();
-
-        toast('Purchase Return Payment Deleted!', 'warning');
+        toast('Purchase Return Payment Voided!', 'warning');
 
         return redirect()->route('purchase-returns.index');
     }

@@ -15,15 +15,13 @@ class UpdateSaleRequest extends FormRequest
     public function rules()
     {
         return [
-            'customer_id' => 'required|numeric',
-            'reference' => 'required|string|max:255',
+            'customer_id' => 'required|integer|exists:customers,id',
+            'date' => 'required|date',
             'tax_percentage' => 'required|integer|min:0|max:100',
             'discount_percentage' => 'required|integer|min:0|max:100',
-            'shipping_amount' => 'required|numeric',
-            'total_amount' => 'required|numeric',
-            'paid_amount' => 'required|numeric|max:' . $this->sale->total_amount,
-            'status' => 'required|string|max:255',
-            'payment_method' => 'required|string|max:255',
+            'shipping_amount' => 'required|numeric|min:0',
+            'status' => 'required|string|in:Pending,Shipped,Completed',
+            'due_date' => 'nullable|date|after_or_equal:date',
             'note' => 'nullable|string|max:1000'
         ];
     }

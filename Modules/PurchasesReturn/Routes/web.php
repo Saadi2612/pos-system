@@ -36,10 +36,6 @@ Route::group(['middleware' => 'auth'], function() {
         ->name('purchase-return-payments.create');
     Route::post('/purchase-return-payments/store', 'PurchaseReturnPaymentsController@store')
         ->name('purchase-return-payments.store');
-    Route::get('/purchase-return-payments/{purchase_return_id}/edit/{purchaseReturnPayment}', 'PurchaseReturnPaymentsController@edit')
-        ->name('purchase-return-payments.edit');
-    Route::patch('/purchase-return-payments/update/{purchaseReturnPayment}', 'PurchaseReturnPaymentsController@update')
-        ->name('purchase-return-payments.update');
     Route::delete('/purchase-return-payments/destroy/{purchaseReturnPayment}', 'PurchaseReturnPaymentsController@destroy')
         ->name('purchase-return-payments.destroy');
 

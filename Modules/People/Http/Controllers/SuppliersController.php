@@ -56,7 +56,11 @@ class SuppliersController extends Controller
     public function show(Supplier $supplier) {
         abort_if(Gate::denies('show_suppliers'), 403);
 
-        return view('people::suppliers.show', compact('supplier'));
+        $account = Gate::allows('access_supplier_ledger')
+            ? app(\App\Services\Ledger\CreditQueries::class)->account('supplier', $supplier->id)
+            : null;
+
+        return view('people::suppliers.show', compact('supplier', 'account'));
     }
 
 
@@ -96,6 +100,14 @@ class SuppliersController extends Controller
 
     public function destroy(Supplier $supplier) {
         abort_if(Gate::denies('delete_suppliers'), 403);
+
+        if (\Illuminate\Support\Facades\DB::table('ledger_entries')->where('party_type', 'supplier')->where('party_id', $supplier->id)->exists()
+            || \Illuminate\Support\Facades\DB::table('purchases')->where('supplier_id', $supplier->id)->exists()
+            || \Illuminate\Support\Facades\DB::table('purchase_returns')->where('supplier_id', $supplier->id)->exists()) {
+            toast('This supplier has financial history and cannot be deleted.', 'error');
+
+            return redirect()->route('suppliers.index');
+        }
 
         $supplier->delete();
 
